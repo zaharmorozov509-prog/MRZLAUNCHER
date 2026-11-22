@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>MRZLAUNCHER</title>
+<style>
+:root{--bg1:#0f0c29;--bg2:#302b63;--bg3:#24243e;--glass:rgba(255,255,255,.08);--border:rgba(255,255,255,.15);--text:#fff;--dim:rgba(255,255,255,.6);--accent:#7f5af0;--shadow:0 8px 32px rgba(0,0,0,.25)}
+[data-theme="light"]{--bg1:#e0e7ff;--bg2:#f0f4ff;--bg3:#dbeafe;--glass:rgba(255,255,255,.55);--border:rgba(255,255,255,.8);--text:#1e1b4b;--dim:rgba(30,27,75,.6);--accent:#6d28d9;--shadow:0 8px 32px rgba(30,27,75,.15)}
+[data-theme="amoled"]{--bg1:#000;--bg2:#000;--bg3:#000;--glass:rgba(255,255,255,.06);--border:rgba(255,255,255,.12);--text:#fff;--dim:rgba(255,255,255,.5);--accent:#a78bfa;--shadow:0 8px 32px rgba(0,0,0,.6)}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh;background:linear-gradient(135deg,var(--bg1),var(--bg2),var(--bg3));background-size:300% 300%;animation:bgShift 20s ease infinite;color:var(--text);padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);overflow-x:hidden;transition:background .5s}
+@keyframes bgShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.launcher{max-width:1200px;margin:0 auto;padding:0 0 140px}
+.widgets{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;padding:20px}
+@media(min-width:900px){.widgets{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:18px;padding:24px}}
+.widget{background:var(--glass);border:1px solid var(--border);border-radius:22px;padding:18px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:var(--shadow);display:flex;align-items:center;gap:14px;transition:transform .2s}
+.widget:hover{transform:translateY(-2px)}
+.widget-clock{flex-direction:column;align-items:flex-start;gap:4px}
+.widget-time{font-size:2.4rem;font-weight:700;letter-spacing:-1px;line-height:1}
+.widget-date{font-size:.85rem;color:var(--dim)}
+.w-icon{font-size:2rem}.w-temp{font-size:1.4rem;font-weight:700;line-height:1}.w-city{font-size:.8rem;color:var(--dim);margin-top:4px}
+.search-wrap{padding:0 20px;margin-top:4px}
+.search-wrap input{width:100%;padding:14px 20px;border-radius:18px;border:1px solid var(--border);background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:var(--text);font-size:1rem;outline:none;transition:border-color .2s,box-shadow .2s}
+.search-wrap input::placeholder{color:var(--dim)}
+.search-wrap input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(127,90,240,.25)}
+.app-grid{margin:20px auto 0;padding:0 20px;display:grid;gap:18px;grid-template-columns:repeat(auto-fill,minmax(80px,1fr))}
+@media(min-width:600px){.app-grid{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:22px}}
+@media(min-width:900px){.app-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:26px}}
+.app-item{display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;color:var(--text);transition:transform .15s;animation:pop .35s ease backwards;position:relative}
+.app-item:active{transform:scale(.9)}
+@keyframes pop{from{opacity:0;transform:scale(.8) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.app-icon{width:64px;height:64px;border-radius:18px;display:grid;place-items:center;font-size:1.8rem;background:var(--glass);border:1px solid var(--border);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 4px 16px rgba(0,0,0,.15);transition:transform .2s,box-shadow .2s}
+@media(min-width:900px){.app-icon{width:76px;height:76px;font-size:2.2rem;border-radius:22px}}
+.app-item:hover .app-icon{transform:translateY(-3px);box-shadow:0 8px 24px rgba(127,90,240,.4)}
+.app-name{font-size:.72rem;text-align:center;color:var(--dim);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dock{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;gap:14px;padding:12px 18px;border-radius:26px;background:var(--glass);border:1px solid var(--border);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:var(--shadow);z-index:10}
+.dock .app-icon{width:52px;height:52px;font-size:1.5rem;border-radius:15px}
+.dock .app-name{display:none}
+.fab{position:fixed;bottom:calc(90px + env(safe-area-inset-bottom));right:20px;width:52px;height:52px;border-radius:50%;border:1px solid var(--border);background:var(--glass);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);color:var(--text);font-size:1.4rem;cursor:pointer;display:grid;place-items:center;box-shadow:var(--shadow);z-index:11;transition:transform .2s}
+.fab:active{transform:scale(.9)}
+.settings-panel{position:fixed;inset:0;z-index:50;background:var(--bg1);padding:30px 24px;transform:translateX(100%);transition:transform .3s ease;overflow-y:auto}
+.settings-panel.open{transform:translateX(0)}
+.settings-panel h2{font-size:1.6rem;margin-bottom:24px}
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--border)}
+.theme-switch{display:flex;gap:8px}
+.theme-switch button{width:44px;height:44px;border-radius:14px;border:1px solid var(--border);background:var(--glass);font-size:1.2rem;cursor:pointer;transition:transform .2s}
+.theme-switch button:active{transform:scale(.9)}
+.close-settings{margin-top:30px;width:100%;padding:14px;border-radius:16px;border:none;background:var(--accent);color:#fff;font-size:1rem;font-weight:600;cursor:pointer}
+.empty{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--dim)}
+</style>
+</head>
+<body data-theme="dark">
+
+<div class="launcher">
+  <section class="widgets">
+    <div class="widget widget-clock">
+      <div class="widget-time" id="wTime">00:00</div>
+      <div class="widget-date" id="wDate"></div>
+    </div>
+    <div class="widget">
+      <div class="w-icon" id="batteryIcon">🔋</div>
+      <div><div class="w-temp" id="batteryLevel">—%</div><div class="w-city" id="batteryStatus">Батарея</div></div>
+    </div>
+  </section>
+
+  <div class="search-wrap">
+    <input type="search" id="search" placeholder="Поиск приложений…" autocomplete="off">
+  </div>
+
+  <main class="app-grid" id="grid"></main>
+  <nav class="dock" id="dock"></nav>
+  <button class="fab" id="settingsBtn">⚙️</button>
+</div>
+
+<div class="settings-panel" id="settingsPanel">
+  <h2>Настройки</h2>
+  <div class="setting-row">
+    <span>Тема</span>
+    <div class="theme-switch">
+      <button data-theme="dark">🌙</button>
+      <button data-theme="light">☀️</button>
+      <button data-theme="amoled">🖤</button>
+    </div>
+  </div>
+  <button class="close-settings" id="closeSettings">Закрыть</button>
+</div>
+
+<script>
+function updateClock(){
+  const n=new Date();
+  const t=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+  const d=n.toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long'});
+  document.getElementById('wTime').textContent=t;
+  document.getElementById('wDate').textContent=d;
+}
+updateClock();setInterval(updateClock,1000);
+
+function updateBattery(){
+  if(!window.AndroidLauncher) return;
+  try{
+    const l=AndroidLauncher.getBatteryLevel();
+    const c=AndroidLauncher.isCharging();
+    document.getElementById('batteryLevel').textContent=l+'%';
+    document.getElementById('batteryStatus').textContent=c?'Заряжается':'Батарея';
+    document.getElementById('batteryIcon').textContent=c?'⚡':(l>50?'🔋':l>20?'🪫':'🪫');
+  }catch(e){}
+}
+updateBattery();setInterval(updateBattery,30000);
+
+let allApps=[];
+try{ if(window.AndroidLauncher) allApps=JSON.parse(AndroidLauncher.getApps()); }catch(e){}
+
+const emojiMap={youtube:'▶️',google:'🔍',telegram:'✈️',whatsapp:'💬',github:'🐙',netflix:'🎬',spotify:'🎧',instagram:'📸',facebook:'📘',twitter:'🐦',camera:'📷',gallery:'🖼️',phone:'📞',settings:'⚙️',chrome:'🌐',maps:'🗺️',mail:'✉️',music:'🎵',clock:'⏰',calendar:'📅',calc:'🧮'};
+function getEmoji(p){p=p.toLowerCase();for(const k in emojiMap)if(p.includes(k))return emojiMap[k];return '📱'}
+
+const grid=document.getElementById('grid');
+const dock=document.getElementById('dock');
+const search=document.getElementById('search');
+
+function render(list){
+  grid.innerHTML='';
+  if(!list.length){grid.innerHTML='<div class="empty">Ничего не найдено</div>';return}
+  list.forEach((a,i)=>{
+    const el=document.createElement('div');
+    el.className='app-item';
+    el.style.animationDelay=(i*.03)+'s';
+    el.innerHTML=`<div class="app-icon">${getEmoji(a.pkg)}</div><div class="app-name">${a.name}</div>`;
+    el.onclick=()=>{if(window.AndroidLauncher)AndroidLauncher.launchApp(a.pkg)};
+    grid.appendChild(el);
+  });
+}
+function renderDock(list){
+  dock.innerHTML='';
+  list.slice(0,5).forEach(a=>{
+    const el=document.createElement('div');
+    el.className='app-item';
+    el.innerHTML=`<div class="app-icon">${getEmoji(a.pkg)}</div>`;
+    el.onclick=()=>{if(window.AndroidLauncher)AndroidLauncher.launchApp(a.pkg)};
+    dock.appendChild(el);
+  });
+}
+render(allApps);renderDock(allApps);
+
+search.addEventListener('input',e=>{
+  const q=e.target.value.toLowerCase();
+  render(allApps.filter(a=>a.name.toLowerCase().includes(q)));
+});
+
+document.getElementById('settingsBtn').onclick=()=>document.getElementById('settingsPanel').classList.add('open');
+document.getElementById('closeSettings').onclick=()=>document.getElementById('settingsPanel').classList.remove('open');
+document.querySelectorAll('[data-theme]').forEach(b=>{
+  b.onclick=()=>document.body.dataset.theme=b.dataset.theme;
+});
+
+window.onLauncherBack=()=>{document.getElementById('settingsPanel').classList.remove('open')};
+</script>
+</body>
+</html>
