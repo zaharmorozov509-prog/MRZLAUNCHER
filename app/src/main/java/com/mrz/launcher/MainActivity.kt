@@ -3,13 +3,19 @@ package com.mrz.launcher
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.os.BatteryManager
 import android.os.Bundle
+import android.util.Base64
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import androidx.appcompat.app.AppCompatActivity
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.ByteArrayOutputStream
 
 class MainActivity : AppCompatActivity() {
 
@@ -22,18 +28,14 @@ class MainActivity : AppCompatActivity() {
         webView.settings.apply {
             javaScriptEnabled = true
             allowFileAccess = true
-            allowContentAccess = true
             domStorageEnabled = true
         }
         webView.addJavascriptInterface(Bridge(), "AndroidLauncher")
         webView.loadUrl("file:///android_asset/index.html")
     }
 
-    override fun onBackPressed() {
-        webView.evaluateJavascript("window.onLauncherBack && window.onLauncherBack()", null)
-    }
-
     inner class Bridge {
+
         @JavascriptInterface
         fun getApps(): String {
             val pm = packageManager
@@ -43,19 +45,41 @@ class MainActivity : AppCompatActivity() {
             for (info in list) {
                 val pkg = info.activityInfo.packageName
                 if (pkg == packageName) continue
+                val iconBase64 = try {
+                    val drawable = info.loadIcon(pm)
+                    drawableToBase64(drawable)
+                } catch (e: Exception) { "" }
+
                 arr.put(JSONObject().apply {
                     put("name", info.loadLabel(pm).toString())
                     put("pkg", pkg)
+                    put("icon", iconBase64)
                 })
             }
             return arr.toString()
         }
 
+        private fun drawableToBase64(drawable: Drawable): String {
+            val bitmap = if (drawable is BitmapDrawable) {
+                drawable.bitmap
+            } else {
+                Bitmap.createBitmap(128, 128, Bitmap.Config.ARGB_8888).also {
+                    val canvas = Canvas(it)
+                    drawable.setBounds(0, 0, 128, 128)
+                    drawable.draw(canvas)
+                }
+            }
+            val stream = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+            return Base64.encodeToString(stream.toByteArray(), Base64.NO_WRAP)
+        }
+
         @JavascriptInterface
         fun launchApp(pkg: String) {
-            val intent = packageManager.getLaunchIntentForPackage(pkg) ?: return
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            startActivity(intent)
+            packageManager.getLaunchIntentForPackage(pkg)?.let {
+                it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                startActivity(it)
+            }
         }
 
         @JavascriptInterface
