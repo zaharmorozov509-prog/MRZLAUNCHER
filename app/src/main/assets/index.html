@@ -283,15 +283,19 @@ body {
 <!-- Настройки -->
 <div class="settings" id="settingsPanel">
   <h2>Настройки</h2>
-  <div class="setting-row">
-    <span>Тема</span>
-    <div class="theme-switch">
-      <button data-theme="dark">🌙</button>
-      <button data-theme="light">☀️</button>
-      <button data-theme="amoled">🖤</button>
-    </div>
+  
+  <div style="margin-top: 20px;">
+    <button id="pickWallpaperBtn" style="width:100%; padding:16px; border-radius:16px; background:var(--glass); border:1px solid var(--glass-border); color:var(--text); font-size:1rem; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px;">
+      🖼 Установить свои обои
+    </button>
   </div>
-  <button class="close-settings" id="closeSettings">Закрыть</button>
+
+  <div class="theme-switch" style="margin-top: 30px;">
+    <button data-theme="dark">🌙</button>
+    <button data-theme="light">☀️</button>
+    <button data-theme="amoled">🖤</button>
+  </div>
+  <button id="closeSettings" style="margin-top:40px;width:100%;padding:16px;border-radius:16px;background:var(--accent);border:none;color:#fff;font-weight:600;font-size:1rem">Закрыть</button>
 </div>
 
 <script>
@@ -472,6 +476,49 @@ window.onLauncherBack = () => {
   closeSearch();
   lock.classList.remove('hidden');
 };
+ // ===== Кастомные обои =====
+const wallpaperDiv = document.getElementById('wallpaper');
+
+// Функция, которую вызывает Kotlin, когда пользователь выбрал фото
+window.setCustomWallpaper = function(base64Image) {
+  // Применяем картинку как фон
+  wallpaperDiv.style.backgroundImage = `url('data:image/jpeg;base64,${base64Image}')`;
+  wallpaperDiv.style.backgroundSize = 'cover';
+  wallpaperDiv.style.backgroundPosition = 'center';
+  
+  // Убираем градиенты, чтобы не перекрывали фото
+  wallpaperDiv.style.background = '';
+  wallpaperDiv.style.backgroundImage = `url('data:image/jpeg;base64,${base64Image}')`;
+  wallpaperDiv.style.backgroundSize = 'cover';
+  wallpaperDiv.style.backgroundPosition = 'center';
+
+  // Сохраняем в память телефона
+  try {
+    localStorage.setItem('customWallpaper', base64Image);
+  } catch (e) {
+    console.warn('Не удалось сохранить обои в память');
+  }
+
+  // Закрываем настройки
+  document.getElementById('settingsPanel').classList.remove('open');
+};
+
+// Кнопка вызова галереи
+document.getElementById('pickWallpaperBtn').onclick = () => {
+  if (window.AndroidLauncher && window.AndroidLauncher.openWallpaperPicker) {
+    window.AndroidLauncher.openWallpaperPicker();
+  } else {
+    alert("Галерея доступна только в приложении!");
+  }
+};
+
+// При загрузке проверяем, есть ли сохраненные обои
+window.addEventListener('load', () => {
+  const savedWallpaper = localStorage.getItem('customWallpaper');
+  if (savedWallpaper) {
+    window.setCustomWallpaper(savedWallpaper);
+  }
+});
 </script>
 </body>
 </html>
