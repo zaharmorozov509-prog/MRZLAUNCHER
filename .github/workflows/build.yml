@@ -1,17 +1,63 @@
 name: Build MRZLAUNCHER
-on: [push, workflow_dispatch]
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with: { java-version: '17', distribution: 'temurin' }
-      - uses: gradle/actions/setup-gradle@v4
-      - run: |
-          echo 'pluginManagement{repositories{google();mavenCentral();gradlePluginPortal()}}' > settings.gradle.kts
-          echo 'dependencyResolutionManagement{repositories{google();mavenCentral()}}' >> settings.gradle.kts
-          echo 'rootProject.name="MRZLAUNCHER";include(":app")' >> settings.gradle.kts
-          gradle :app:assembleDebug --no-daemon
-      - uses: actions/upload-artifact@v4
-        with: { name: MRZLAUNCHER-apk, path: app/build/outputs/apk/debug/app-debug.apk }
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Generate Gradle configs
+        run: |
+          # gradle.properties — исправляет ошибку AndroidX
+          echo 'android.useAndroidX=true' > gradle.properties
+          echo 'android.enableJetifier=true' >> gradle.properties
+          echo 'org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8' >> gradle.properties
+          echo 'org.gradle.parallel=true' >> gradle.properties
+          echo 'org.gradle.caching=true' >> gradle.properties
+          echo 'kotlin.code.style=official' >> gradle.properties
+
+          # settings.gradle.kts
+          cat > settings.gradle.kts << 'EOF'
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "MRZLAUNCHER"
+          include(":app")
+          EOF
+
+      - name: Build Debug APK
+        run: gradle :app:assembleDebug --no-daemon --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MRZLAUNCHER-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
